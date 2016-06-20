@@ -5,16 +5,21 @@
 #include <ESP8266WebServer.h>
 #include <ESP8266mDNS.h>
 #include <ArduinoOTA.h>
+#include <SoftwareSerial.h>
+
+#define SERIAL_BUFFER_SIZE 64
 
 typedef enum {open = 0, closed = 1} state;
 
 const char* ssid = "wireless";
 const char* password = "oklahoma";
 
+SoftwareSerial mySerial(13, 16); //rx, tx
+
 ESP8266WebServer server(80);
 
 const int hall = 14;
-const int motorDirPin[2] = {12, 13}; //motorDirPin[0] = 12, motorDirPin[1] = 13
+const int motorDirPin[2] = {12, 0}; //motorDirPin[0] = 12, motorDirPin[1] = 13
 const int pwmPin = 15;
 const int sence = A0;
 const int sw = 2;
@@ -102,6 +107,8 @@ void setup(void){
   String hostname = "motor";
   ArduinoOTA.setHostname((const char *)hostname.c_str());
   ArduinoOTA.begin();
+
+  mySerial.begin(9600);
 }
 
 long last = 0;
@@ -129,18 +136,22 @@ void loop(void){
   server.handleClient();
   ArduinoOTA.handle();
 
+  if (mySerial.available()) {
+    int x = mySerial.read();
+    Serial.print((char)x);
+  }
 
   int senceValue = analogRead(sence);
   int swValue = !digitalRead(sw);
 
   if(tablet == open && !digitalRead(hall) && dir == -1 && millis() > (last + 5000)) {
-    closeFunc(); 
+    closeFunc();
   }
 
   else if(tablet == closed && swValue && dir) {
     motor(-1);
     dir = -1;
-    last = millis(); 
+    last = millis();
   }
   if(senceValue > 110 && millis() > (last + 500)) {
       if(tablet == open) {
