@@ -19,6 +19,9 @@ const int pwmPin = 15;
 const int sence = A0;
 const int sw = 2;
 
+void checkClose(void);
+void close(void);
+
 void motor(int dir){
   switch (dir) {
     case 0: //sluk både pin 12 og 13 og juice
@@ -104,6 +107,23 @@ void setup(void){
 long last = 0;
 int dir = -1;
 state tablet = open;
+long tim = millis();
+void (*closeFunc)(void) = checkClose;
+
+
+void close(void) {
+    if(millis() > (tim + 1500)) {
+        motor(1);
+        dir = 1;
+        last = millis();
+        closeFunc = checkClose;
+    }
+}
+
+void checkClose() {
+    tim = millis();
+    closeFunc = close;
+}
 
 void loop(void){
   server.handleClient();
@@ -113,17 +133,15 @@ void loop(void){
   int senceValue = analogRead(sence);
   int swValue = !digitalRead(sw);
 
-  if(tablet == open && !digitalRead(hall) && dir == -1) {
-    motor(1);
-    dir = 1;
-    last = millis();
+  if(tablet == open && !digitalRead(hall) && dir == -1 && millis() > (last + 5000)) {
+    closeFunc(); 
   }
+
   else if(tablet == closed && swValue && dir) {
     motor(-1);
     dir = -1;
-    last = millis();
+    last = millis(); 
   }
-
   if(senceValue > 110 && millis() > (last + 500)) {
       if(tablet == open) {
         tablet = closed;
@@ -132,6 +150,6 @@ void loop(void){
         tablet = open;
       }
       motor(0);
+      last = millis();
   }
-
 }
