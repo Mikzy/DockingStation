@@ -117,7 +117,6 @@ void setup(void){
 	SPI.begin();			// Init SPI bus
 	mfrc522.PCD_Init();		// Init MFRC522
 	mfrc522.PCD_DumpVersionToSerial();	// Show details of PCD - MFRC522 Card Reader details
-
 }
 
 long last = 0;
@@ -150,7 +149,6 @@ void loop(void){
   server.handleClient();
   ArduinoOTA.handle();
 
-
   int senceValue = analogRead(sence);
   int swValue = 0;
 
@@ -159,7 +157,7 @@ void loop(void){
   }
 
   if(tablet == open && !digitalRead(hall) && dir == -1 && millis() > (last + 5000)) {
-    closeFunc(); 
+    closeFunc();
   }
 
   else if(tablet == closed && swValue && dir) {
@@ -167,7 +165,6 @@ void loop(void){
     dir = -1;
     last = millis(); 
     memset(key, 0, 16);
-    
   }
 
   if(senceValue > 110 && millis() > (last + 500)) {
