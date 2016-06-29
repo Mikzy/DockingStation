@@ -5,22 +5,36 @@
 #include <ESP8266WebServer.h>
 #include <ESP8266mDNS.h>
 #include <ArduinoOTA.h>
+#include <SPI.h>
+#include <MFRC522.h>
+
+#define RST_PIN         4
+#define SS_PIN          2
 
 typedef enum {open = 0, closed = 1} state;
 
 const char* ssid = "wireless";
 const char* password = "oklahoma";
 
+char key[16];
+
 ESP8266WebServer server(80);
 
-const int hall = 14;
-const int motorDirPin[2] = {12, 13}; //motorDirPin[0] = 12, motorDirPin[1] = 13
+MFRC522 mfrc522(SS_PIN, RST_PIN);  // Create MFRC522 instance
+
+const int hall = 16;
+const int motorDirPin[2] = {5, 0}; //motorDirPin[0] = 12, motorDirPin[1] = 13
 const int pwmPin = 15;
 const int sence = A0;
-const int sw = 2;
 
 void checkClose(void);
 void close(void);
+
+void dump_byte_array(byte *buffer, byte bufferSize) {
+  for (byte i = 0; i < bufferSize; i++) {
+    key[i] = buffer[i];
+  }
+}
 
 void motor(int dir){
   switch (dir) {
@@ -66,9 +80,6 @@ void setup(void){
   pinMode(motorDirPin[0], OUTPUT);
   pinMode(motorDirPin[1], OUTPUT);
   pinMode(pwmPin, OUTPUT);
-  pinMode(sw, INPUT);
-
-
 
   Serial.begin(115200);
   WiFi.begin(ssid, password);
@@ -102,9 +113,15 @@ void setup(void){
   String hostname = "motor";
   ArduinoOTA.setHostname((const char *)hostname.c_str());
   ArduinoOTA.begin();
+
+	SPI.begin();			// Init SPI bus
+	mfrc522.PCD_Init();		// Init MFRC522
+	mfrc522.PCD_DumpVersionToSerial();	// Show details of PCD - MFRC522 Card Reader details
+
 }
 
 long last = 0;
+long lastCard = 0;
 int dir = -1;
 state tablet = open;
 long tim = millis();
@@ -117,6 +134,10 @@ void close(void) {
         dir = 1;
         last = millis();
         closeFunc = checkClose;
+        while( mfrc522.PICC_IsNewCardPresent() ) {
+            mfrc522.PICC_ReadCardSerial();
+        }
+        memset(key, 0, 16);
     }
 }
 
@@ -131,7 +152,11 @@ void loop(void){
 
 
   int senceValue = analogRead(sence);
-  int swValue = !digitalRead(sw);
+  int swValue = 0;
+
+  if(String(key) != String("")) {
+    swValue = 1;
+  }
 
   if(tablet == open && !digitalRead(hall) && dir == -1 && millis() > (last + 5000)) {
     closeFunc(); 
@@ -141,7 +166,10 @@ void loop(void){
     motor(-1);
     dir = -1;
     last = millis(); 
+    memset(key, 0, 16);
+    
   }
+
   if(senceValue > 110 && millis() > (last + 500)) {
       if(tablet == open) {
         tablet = closed;
@@ -151,5 +179,27 @@ void loop(void){
       }
       motor(0);
       last = millis();
+
+
   }
+
+  if (tablet == open) {
+    while( mfrc522.PICC_IsNewCardPresent() ) {
+        mfrc522.PICC_ReadCardSerial();
+    }
+    memset(key, 0, 16);
+  }
+
+
+  if ( !mfrc522.PICC_IsNewCardPresent() || (!(millis() > (2000 + lastCard))  )) {
+    return;
+  }
+  // Select one of the cards
+  if ( ! mfrc522.PICC_ReadCardSerial()) {
+    return;
+  }
+
+  dump_byte_array(mfrc522.uid.uidByte, mfrc522.uid.size);
+  lastCard = millis();
+  
 }
