@@ -82,37 +82,38 @@ void setup(void){
   pinMode(pwmPin, OUTPUT);
 
   Serial.begin(115200);
-  WiFi.begin(ssid, password);
   Serial.println("");
-
-  // Wait for connection
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
-  Serial.println("");
-  Serial.print("Connected to ");
-  Serial.println(ssid);
-  Serial.print("IP address: ");
-  Serial.println(WiFi.localIP());
-
-  if (MDNS.begin("esp8266")) {
-    Serial.println("MDNS responder started");
-  }
-
-  server.on("/", handleRoot);
-
-  server.on("/inline", [](){
-    server.send(200, "text/plain", "this works as well");
-  });
-
-  server.onNotFound(handleNotFound);
-
-  server.begin();
-  Serial.println("HTTP server started");
-  String hostname = "motor";
-  ArduinoOTA.setHostname((const char *)hostname.c_str());
-  ArduinoOTA.begin();
+  // WiFi.begin(ssid, password);
+  // Serial.println("");
+  //
+  // // Wait for connection
+  // while (WiFi.status() != WL_CONNECTED) {
+  //   delay(500);
+  //   Serial.print(".");
+  // }
+  // Serial.println("");
+  // Serial.print("Connected to ");
+  // Serial.println(ssid);
+  // Serial.print("IP address: ");
+  // Serial.println(WiFi.localIP());
+  //
+  // if (MDNS.begin("esp8266")) {
+  //   Serial.println("MDNS responder started");
+  // }
+  //
+  // server.on("/", handleRoot);
+  //
+  // server.on("/inline", [](){
+  //   server.send(200, "text/plain", "this works as well");
+  // });
+  //
+  // server.onNotFound(handleNotFound);
+  //
+  // server.begin();
+  // Serial.println("HTTP server started");
+  // String hostname = "motor";
+  // ArduinoOTA.setHostname((const char *)hostname.c_str());
+  // ArduinoOTA.begin();
 
 	SPI.begin();			// Init SPI bus
 	mfrc522.PCD_Init();		// Init MFRC522
@@ -153,6 +154,7 @@ void loop(void){
   int swValue = 0;
 
   if(String(key) != String("")) {
+    Serial.println(String(key));
     swValue = 1;
   }
 
@@ -163,11 +165,11 @@ void loop(void){
   else if(tablet == closed && swValue && dir) {
     motor(-1);
     dir = -1;
-    last = millis(); 
+    last = millis();
     memset(key, 0, 16);
   }
 
-  if(senceValue > 110 && millis() > (last + 500)) {
+  if(senceValue > 850 && millis() > (last + 500)) {
       if(tablet == open) {
         tablet = closed;
       }
@@ -198,5 +200,5 @@ void loop(void){
 
   dump_byte_array(mfrc522.uid.uidByte, mfrc522.uid.size);
   lastCard = millis();
-  
+
 }
