@@ -11,7 +11,7 @@
 #include <ESP8266HTTPClient.h>
 
 
-#define IP              "192.168.3.144:9000"
+#define IP              "vps387520.ovh.net"
 #define HOSTNAME        "Dock"
 #define RST_PIN         4
 #define SS_PIN          2
