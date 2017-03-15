@@ -11,14 +11,14 @@
 #include <ESP8266HTTPClient.h>
 
 
-#define IP              "vps297192.ovh.net"
+#define IP              "192.168.3.144:9000"
 #define HOSTNAME        "Dock"
 #define RST_PIN         4
 #define SS_PIN          2
 
 typedef enum {open = 0, closed = 1} state;
 
-const char* ap_default_ssid = "esp8266"; ///< Default SSID.
+const char* ap_default_ssid = "docking"; ///< Default SSID.
 const char* ap_default_psk = "esp8266esp8266"; ///< Default PSK.
 
 String station_ssid = "";
@@ -385,7 +385,7 @@ void loop(void){
     key = "";
   }
 
-  if(senceValue > 850 && millis() > (last + 500)) {
+  if(senceValue > 500 && millis() > (last + 500)) {
       if(tablet == open) {
         tablet = closed;
       }
